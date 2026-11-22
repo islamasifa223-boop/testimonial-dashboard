@@ -5,6 +5,41 @@
             description="Your current plan, what you've used, and what upgrading would give you."
         />
 
+        @if ($upgradePending)
+            <x-ui.alert variant="info">
+                We're processing your upgrade. Your Pro access is applied as soon as Stripe confirms the payment, which usually takes a few seconds. Refresh this page in a moment to see it.
+            </x-ui.alert>
+        @endif
+
+        @if ($subscription)
+            <x-ui.card>
+                <div class="flex flex-wrap items-center justify-between gap-4">
+                    <div>
+                        <p class="text-sm font-semibold text-ink">Subscription</p>
+                        <p class="mt-0.5 text-sm text-ink-muted">
+                            @if ($subscription->pastDue())
+                                Your last payment failed. Pro access continues until Stripe cancels the subscription.
+                            @elseif ($subscription->onGracePeriod())
+                                Your subscription is set to cancel at the end of the current period. Pro access continues until then.
+                            @elseif ($subscription->ended())
+                                Your subscription has ended.
+                            @elseif ($subscription->onTrial())
+                                Your subscription is on trial.
+                            @else
+                                Your subscription is active.
+                            @endif
+                        </p>
+                    </div>
+
+                    @if ($currentPlan?->isPro())
+                        <x-ui.button href="{{ route('dashboard.billing.portal') }}" variant="secondary" size="md">
+                            Manage billing
+                        </x-ui.button>
+                    @endif
+                </div>
+            </x-ui.card>
+        @endif
+
         <div class="grid gap-4 sm:grid-cols-2">
             <x-ui.card title="Current plan">
                 <div class="flex items-center justify-between gap-4">
@@ -30,12 +65,6 @@
                         <div class="h-full rounded-full bg-brand-500" style="width: {{ $spacesLimit > 0 ? min(100, (int) round(($spacesUsed / $spacesLimit) * 100)) : 0 }}%"></div>
                     </div>
                 </div>
-
-                @if ($currentPlan && ! $currentPlan->isPro())
-                    <p class="mt-5 rounded-lg bg-amber-50 px-3 py-2 text-xs text-amber-800 ring-1 ring-inset ring-amber-200">
-                        Upgrades are handled by Stripe and become available in a later phase.
-                    </p>
-                @endif
             </x-ui.card>
 
             <x-ui.card title="What upgrading gives you">
@@ -93,7 +122,14 @@
                             @if ($currentPlan && $currentPlan->name === $plan->name)
                                 <x-ui.button disabled variant="secondary" class="w-full">Your current plan</x-ui.button>
                             @elseif ($plan->isPro())
-                                <x-ui.button disabled variant="secondary" class="w-full" title="Stripe checkout arrives in Phase 5">Upgrade to Pro</x-ui.button>
+                                @if ($proCheckoutAvailable)
+                                    <form method="POST" action="{{ route('dashboard.billing.upgrade') }}">
+                                        @csrf
+                                        <x-ui.button type="submit" variant="primary" class="w-full">Upgrade to Pro</x-ui.button>
+                                    </form>
+                                @else
+                                    <x-ui.button disabled variant="secondary" class="w-full" title="Pro checkout is not available in this environment">Upgrade to Pro</x-ui.button>
+                                @endif
                             @else
                                 <x-ui.button disabled variant="secondary" class="w-full">Downgrade to Free</x-ui.button>
                             @endif

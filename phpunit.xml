@@ -32,5 +32,9 @@
         <env name="PULSE_ENABLED" value="false"/>
         <env name="TELESCOPE_ENABLED" value="false"/>
         <env name="NIGHTWATCH_ENABLED" value="false"/>
+        <!-- A webhook secret is required for the webhook route to exist at
+             all. The application fails closed without one, so the test
+             environment needs a value for the route to be registered. -->
+        <env name="STRIPE_WEBHOOK_SECRET" value="whsec_test_secret_for_the_test_suite"/>
     </php>
 </phpunit>

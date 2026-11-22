@@ -117,6 +117,12 @@ Route::middleware('auth')->group(function (): void {
 
         Route::get('billing', BillingController::class)->name('billing');
 
+        Route::post('billing/upgrade', [BillingController::class, 'upgrade'])
+            ->name('billing.upgrade');
+
+        Route::get('billing/portal', [BillingController::class, 'portal'])
+            ->name('billing.portal');
+
         Route::get('settings', [ProfileController::class, 'edit'])->name('settings');
         Route::patch('settings/profile', [ProfileController::class, 'update'])->name('settings.profile.update');
         Route::put('settings/password', [ProfileController::class, 'updatePassword'])->name('settings.password.update');

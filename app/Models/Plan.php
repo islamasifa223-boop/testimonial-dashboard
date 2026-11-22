@@ -61,4 +61,18 @@ class Plan extends Model
     {
         return number_format($this->price_monthly_cents / 100, 2);
     }
+
+    /**
+     * The Stripe Price ID this plan is billed against.
+     *
+     * This is the only authoritative source for matching a Stripe
+     * subscription to this plan. It is null until an environment-specific
+     * Price ID has been configured.
+     */
+    public function stripePriceId(): ?string
+    {
+        $priceId = $this->stripe_price_id;
+
+        return is_string($priceId) && trim($priceId) !== '' ? trim($priceId) : null;
+    }
 }

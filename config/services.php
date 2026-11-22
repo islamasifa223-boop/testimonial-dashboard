@@ -35,4 +35,14 @@ return [
         ],
     ],
 
+    'stripe' => [
+        'key' => env('STRIPE_KEY'),
+        'secret' => env('STRIPE_SECRET'),
+        'webhook_secret' => env('STRIPE_WEBHOOK_SECRET'),
+
+        // The recurring monthly Price ID for the Pro plan. Used server-side
+        // only; it is never sent to the browser.
+        'pro_price_id' => env('STRIPE_PRO_PRICE_ID'),
+    ],
+
 ];
