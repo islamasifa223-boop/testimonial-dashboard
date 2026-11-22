@@ -1,0 +1,174 @@
+/*
+ * The stylesheet of an embeddable widget.
+ *
+ * A widget is shown on somebody else's website, so its stylesheet must
+ * not change the host page and the host page must not change the
+ * widget.
+ *
+ * Two decisions follow from that:
+ *
+ *  - Tailwind is not used here. Its preflight resets the margins and
+ *    font sizes of every element on the page, which would restyle the
+ *    host page of every site that embeds a widget.
+ *  - every rule is scoped under a class on the widget's own root
+ *    element, and no rule is written against a bare element selector.
+ *    A rule such as `p { margin: 0 }` would change every paragraph on
+ *    the host page.
+ *
+ * The colours are read from custom properties, which the view writes
+ * out inline. The stylesheet therefore holds no colours of its own, so
+ * the appearance of a widget lives in exactly one place.
+ */
+
+.klw-body {
+    margin: 0;
+    padding: 0;
+    background: var(--klw-surface, #ffffff);
+    font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+    line-height: 1.5;
+    -webkit-text-size-adjust: 100%;
+}
+
+.klw-widget {
+    box-sizing: border-box;
+    width: 100%;
+    color: var(--klw-body-ink, #374151);
+}
+
+.klw-widget *,
+.klw-widget *::before,
+.klw-widget *::after {
+    box-sizing: border-box;
+}
+
+.klw-list {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+/* The masonry layout stacks the testimonials in columns of their own
+   height. The columns are packed by content, so a short testimonial
+   leaves no gap beneath it and a long one simply makes a taller card.
+
+   The columns are counted from the viewport rather than from the
+   container, because a multi-column layout cannot ask how wide its
+   container is. A narrow widget therefore shows one column. */
+.klw-widget--masonry .klw-list {
+    display: block;
+    column-gap: 1rem;
+    column-fill: balance;
+}
+
+.klw-widget--masonry .klw-card {
+    display: inline-block;
+    width: 100%;
+    margin: 0 0 1rem;
+    break-inside: avoid;
+    page-break-inside: avoid;
+}
+
+@media (min-width: 40rem) {
+    .klw-widget--masonry .klw-list {
+        column-count: 2;
+    }
+}
+
+@media (min-width: 64rem) {
+    .klw-widget--masonry .klw-list {
+        column-count: 3;
+    }
+}
+
+/* The carousel layout shows the testimonials side by side in a row that
+   scrolls. The scroller is the list itself, not the widget root, so the
+   scroll position belongs to the row of cards. */
+.klw-widget--carousel .klw-list {
+    display: flex;
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    scrollbar-width: thin;
+}
+
+.klw-widget--carousel .klw-card {
+    flex: 0 0 min(20rem, 80%);
+    margin: 0 1rem 0 0;
+    scroll-snap-align: start;
+}
+
+.klw-widget--carousel .klw-card:last-child {
+    margin-right: 0;
+}
+
+.klw-card {
+    padding: 1.25rem;
+    border: 1px solid var(--klw-border, #e5e7eb);
+    border-radius: 0.75rem;
+    background: var(--klw-card, #ffffff);
+    box-shadow: 0 1px 2px rgb(0 0 0 / 0.05);
+}
+
+.klw-card-body {
+    margin: 0;
+}
+
+.klw-photo {
+    width: 3rem;
+    height: 3rem;
+    border-radius: 9999px;
+    object-fit: cover;
+    margin-bottom: 0.75rem;
+}
+
+.klw-name {
+    margin: 0;
+    font-size: 0.9375rem;
+    font-weight: 600;
+    color: var(--klw-heading, #111827);
+}
+
+.klw-company {
+    margin: 0.125rem 0 0;
+    font-size: 0.875rem;
+    color: var(--klw-muted, #6b7280);
+}
+
+.klw-stars {
+    display: inline-flex;
+    gap: 0.125rem;
+    margin-top: 0.5rem;
+    color: var(--klw-star, #f59e0b);
+}
+
+.klw-star {
+    display: inline-flex;
+    width: 1rem;
+    height: 1rem;
+}
+
+.klw-star--empty {
+    color: var(--klw-border, #e5e7eb);
+}
+
+.klw-body-text {
+    margin: 0.75rem 0 0;
+    font-size: 0.875rem;
+    color: var(--klw-body-ink, #374151);
+    white-space: pre-line;
+}
+
+.klw-empty {
+    margin: 0;
+    padding: 1.5rem;
+    text-align: center;
+    font-size: 0.875rem;
+    color: var(--klw-muted, #6b7280);
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .klw-widget * {
+        animation: none !important;
+        transition: none !important;
+        scroll-behavior: auto !important;
+    }
+}
