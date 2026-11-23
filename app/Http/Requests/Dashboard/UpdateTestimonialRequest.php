@@ -2,6 +2,8 @@
 
 namespace App\Http\Requests\Dashboard;
 
+use App\Models\Testimonial;
+use App\Models\User;
 use Illuminate\Foundation\Http\FormRequest;
 
 /**
@@ -33,12 +35,49 @@ class UpdateTestimonialRequest extends FormRequest
     /**
      * Determine if the user is authorized to make this request.
      *
-     * Ownership is checked by the controller, which knows which testimonial
-     * is being updated.
+     * A testimonial is only ever edited by the account that owns the space
+     * it belongs to. The check lives here rather than in the controller so
+     * that it runs before the payload is validated: a validation failure
+     * would otherwise tell a non-owner that the id refers to a real
+     * testimonial.
      */
     public function authorize(): bool
     {
-        return true;
+        $testimonial = $this->route('testimonial');
+
+        // The controller takes the id as an integer, so the route parameter
+        // is the raw id rather than a model. It is resolved here so that
+        // the ownership check can be made before the payload is validated.
+        if (! $testimonial instanceof Testimonial) {
+            $testimonial = Testimonial::query()->whereKey($testimonial)->first();
+        }
+
+        if (! $testimonial instanceof Testimonial) {
+            // A testimonial that does not exist is not the account's to
+            // edit. The controller reports it as missing.
+            return false;
+        }
+
+        $user = $this->user();
+
+        if (! $user instanceof User) {
+            return false;
+        }
+
+        return $user->spaces()->whereKey($testimonial->space_id)->exists();
+    }
+
+    /**
+     * Report a refusal as a missing testimonial rather than as a forbidden
+     * one.
+     *
+     * A 403 would confirm that the id belongs to a real testimonial, which
+     * would let an account probe for ids it does not own. The same answer
+     * is given for a testimonial that does not exist at all.
+     */
+    protected function failedAuthorization(): void
+    {
+        abort(404);
     }
 
     /**

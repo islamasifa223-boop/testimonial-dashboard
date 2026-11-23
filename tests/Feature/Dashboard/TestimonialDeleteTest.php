@@ -325,7 +325,7 @@ test('another account cannot delete a testimonial', function () {
 
     $this->actingAs($other)
         ->delete(route('dashboard.testimonials.destroy', $testimonial))
-        ->assertForbidden();
+        ->assertNotFound();
 
     // The row is untouched and still live to the application.
     expect(testimonialRowExists($testimonial->getKey()))->toBeTrue()
@@ -350,7 +350,7 @@ test('a testimonial of a soft deleted space cannot be deleted', function () {
 
     $this->actingAs($user)
         ->delete(route('dashboard.testimonials.destroy', $testimonial))
-        ->assertForbidden();
+        ->assertNotFound();
 
     // The row is untouched and still live to the application.
     expect(testimonialRowExists($testimonial->getKey()))->toBeTrue()

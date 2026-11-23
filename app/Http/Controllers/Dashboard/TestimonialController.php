@@ -10,6 +10,7 @@ use App\Models\User;
 use App\Services\TestimonialPhotoStorage;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\View\View;
 use Throwable;
 
@@ -189,18 +190,27 @@ class TestimonialController extends Controller
     }
 
     /**
-     * Find a testimonial and authorise the requested ability on it.
+     * Find a testimonial that the signed-in account is allowed to act on.
      *
-     * The testimonial is loaded with its space, so the policy can read
-     * the owner of the space without a second query. A testimonial that
-     * does not exist is a 404. A testimonial that belongs to another
-     * account, or whose space has been soft deleted, is a 403.
+     * The testimonial is loaded with its space, so the owner of the space
+     * can be read without a second query. A testimonial that does not
+     * exist is a 404. A testimonial that belongs to another account, or
+     * whose space has been soft deleted, is also a 404.
+     *
+     * A 404 is used rather than a 403 so that every way of failing looks
+     * the same from the outside. A 403 would confirm that the id belongs
+     * to a real testimonial, which would let an account probe for ids it
+     * does not own.
      */
     private function findTestimonial(Request $request, int $id, string $ability): Testimonial
     {
         $testimonial = Testimonial::query()->with('space')->whereKey($id)->firstOrFail();
 
-        $this->authorize($ability, $testimonial);
+        // The policy decides whether the account may take this action. A
+        // denial is turned into a 404 rather than a 403, so that the
+        // response does not reveal that the id belongs to a real
+        // testimonial.
+        abort_unless(Gate::forUser($request->user())->allows($ability, $testimonial), 404);
 
         return $testimonial;
     }

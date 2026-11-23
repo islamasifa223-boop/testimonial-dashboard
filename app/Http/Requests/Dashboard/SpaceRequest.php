@@ -4,6 +4,7 @@ namespace App\Http\Requests\Dashboard;
 
 use App\Enums\SpaceField;
 use App\Enums\SpaceTheme;
+use App\Models\Space;
 use App\Models\User;
 use App\Services\SpaceNameNormalizer;
 use Illuminate\Contracts\Validation\Validator;
@@ -27,12 +28,41 @@ abstract class SpaceRequest extends FormRequest
     /**
      * Determine if the user is authorized to make this request.
      *
-     * Ownership is checked by the controller, which knows which space is
-     * being updated.
+     * A request that updates a space is only ever made by the account that
+     * owns it. The check lives here rather than in the controller so that
+     * it runs before the payload is validated: a validation failure would
+     * otherwise tell a non-owner that the space id refers to a real space.
+     *
+     * A request that creates a space has no space to own yet, so it is
+     * allowed through and the plan limit is checked by the controller.
      */
     public function authorize(): bool
     {
-        return true;
+        $space = $this->route('space');
+
+        if (! $space instanceof Space) {
+            return true;
+        }
+
+        $user = $this->user();
+
+        if (! $user instanceof User) {
+            return false;
+        }
+
+        return $user->spaces()->whereKey($space->getKey())->exists();
+    }
+
+    /**
+     * Report a refusal as a missing space rather than as a forbidden one.
+     *
+     * A 403 would confirm that the id belongs to a real space, which would
+     * let an account probe for ids it does not own. The same answer is
+     * given for a space that does not exist at all.
+     */
+    protected function failedAuthorization(): void
+    {
+        abort(404);
     }
 
     /**

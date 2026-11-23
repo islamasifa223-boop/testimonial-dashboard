@@ -181,7 +181,7 @@ test('the wording of a testimonial is trimmed', function () {
 
     $this->actingAs($user)
         ->put(route('dashboard.testimonials.update', $testimonial), [
-            'body' => "   The carefully edited wording.   ",
+            'body' => '   The carefully edited wording.   ',
         ])
         ->assertRedirect(route('dashboard.inbox'));
 
@@ -406,7 +406,7 @@ test('another account cannot open the edit form', function () {
 
     $this->actingAs($other)
         ->get(route('dashboard.testimonials.edit', $testimonial))
-        ->assertForbidden();
+        ->assertNotFound();
 });
 
 test('another account cannot save an edit', function () {
@@ -424,7 +424,36 @@ test('another account cannot save an edit', function () {
         ->put(route('dashboard.testimonials.update', $testimonial), [
             'body' => 'A hijacked wording.',
         ])
-        ->assertForbidden();
+        ->assertNotFound();
+
+    expect($testimonial->refresh()->body)->toBe('The original wording.');
+});
+
+test('another account cannot save an edit even with an invalid payload', function () {
+    $owner = User::factory()->create(['name' => 'Inbox Owner']);
+    $other = User::factory()->create(['name' => 'Foreign Owner']);
+
+    $space = Space::factory()->for($owner)->create(['name' => 'Owned Space']);
+
+    $testimonial = Testimonial::factory()->for($space)->create([
+        'name' => 'Ada Lovelace',
+        'body' => 'The original wording.',
+    ]);
+
+    // The ownership check runs before the payload is validated, so a
+    // payload that would fail validation cannot be used to tell a real
+    // testimonial from one that does not exist.
+    $this->actingAs($other)
+        ->put(route('dashboard.testimonials.update', $testimonial), [
+            'body' => '',
+        ])
+        ->assertNotFound();
+
+    $this->actingAs($other)
+        ->put(route('dashboard.testimonials.update', 999999), [
+            'body' => '',
+        ])
+        ->assertNotFound();
 
     expect($testimonial->refresh()->body)->toBe('The original wording.');
 });
@@ -448,7 +477,7 @@ test('a testimonial of a soft deleted space cannot be edited', function () {
 
     $this->actingAs($user)
         ->get(route('dashboard.testimonials.edit', $testimonial))
-        ->assertForbidden();
+        ->assertNotFound();
 });
 
 test('a testimonial of a soft deleted space cannot be saved', function () {
@@ -466,7 +495,7 @@ test('a testimonial of a soft deleted space cannot be saved', function () {
         ->put(route('dashboard.testimonials.update', $testimonial), [
             'body' => 'A wording that should not be saved.',
         ])
-        ->assertForbidden();
+        ->assertNotFound();
 
     expect($testimonial->refresh()->body)->toBe('The original wording.');
 });

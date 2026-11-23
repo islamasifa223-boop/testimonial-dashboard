@@ -240,6 +240,9 @@ test('a guest cannot moderate a testimonial', function (string $action) {
 |--------------------------------------------------------------------------
 */
 
+// A testimonial of another account is reported as missing rather than as
+// forbidden, so that the response does not reveal that the id belongs to a
+// real testimonial.
 test('another account cannot moderate a testimonial', function (string $action) {
     $owner = User::factory()->create(['name' => 'Inbox Owner']);
     $other = User::factory()->create(['name' => 'Foreign Owner']);
@@ -256,7 +259,7 @@ test('another account cannot moderate a testimonial', function (string $action) 
 
     $this->actingAs($other)
         ->post(route("dashboard.testimonials.{$action}", $testimonial))
-        ->assertForbidden();
+        ->assertNotFound();
 
     $testimonial->refresh();
 
@@ -288,7 +291,7 @@ test('a testimonial of a soft deleted space cannot be moderated', function (stri
 
     $this->actingAs($user)
         ->post(route("dashboard.testimonials.{$action}", $testimonial))
-        ->assertForbidden();
+        ->assertNotFound();
 
     $testimonial->refresh();
 

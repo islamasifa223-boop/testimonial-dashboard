@@ -131,9 +131,16 @@ class PlanProvisioner
      * Determine the plan a subscription entitles the user to.
      *
      * A cancellation scheduled for the end of the paid period keeps the user
-     * on Pro until that period actually ends. A payment failure keeps the user
-     * on Pro until Stripe cancels the subscription. Only a subscription Stripe
-     * has actually ended returns the user to Free.
+     * on Pro until that period actually ends. A renewal that failed keeps
+     * the user on Pro until Stripe cancels the subscription, because that
+     * subscription was paid for before.
+     *
+     * An incomplete subscription is the one that has never been paid for.
+     * Stripe moves a subscription into that state when its initial payment
+     * attempt fails, and it stays there until the customer pays or until
+     * the invoice expires. Such an account is not entitled to the Pro plan.
+     * The subscription moves to active once the first invoice is paid, and
+     * that event grants the plan.
      *
      * Returns null when the state does not call for a plan change.
      *
@@ -144,16 +151,17 @@ class PlanProvisioner
         $status = $object['status'] ?? null;
 
         return match ($status) {
-            // Stripe has ended the subscription outright.
+            // Stripe has ended the subscription outright, or the very first
+            // payment never arrived.
             StripeSubscription::STATUS_CANCELED,
+            StripeSubscription::STATUS_INCOMPLETE,
             StripeSubscription::STATUS_INCOMPLETE_EXPIRED => PlanName::Free,
 
-            // Payment failed, or the first payment has not completed yet.
-            // Pro is retained until Stripe cancels the subscription.
+            // The subscription is running. A renewal that failed keeps the
+            // account on Pro until Stripe cancels the subscription.
             StripeSubscription::STATUS_ACTIVE,
             StripeSubscription::STATUS_TRIALING,
             StripeSubscription::STATUS_PAST_DUE,
-            StripeSubscription::STATUS_INCOMPLETE,
             StripeSubscription::STATUS_UNPAID => PlanName::Pro,
 
             // Any other state, including paused, leaves the plan unchanged

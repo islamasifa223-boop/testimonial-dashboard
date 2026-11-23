@@ -221,15 +221,27 @@
 
                                 <pre class="mt-1.5 overflow-x-auto rounded-lg bg-surface-muted p-3 text-xs text-ink"><code>{{ $embedCode->script($savedWidget) }}</code></pre>
 
+                                {{-- The label only changes once the clipboard write has
+                                     actually succeeded, so a failed copy never claims
+                                     to have worked. The status region is read out as
+                                     well, so that the copy is not silent for
+                                     anyone who cannot see the button. --}}
                                 <button
                                     type="button"
-                                    x-data="{ copied: false }"
-                                    @click="navigator.clipboard.writeText(@js($embedCode->script($savedWidget))).then(() => { copied = true; setTimeout(() => copied = false, 2000) })"
+                                    x-data="{ copied: false, message: '' }"
+                                    @click="navigator.clipboard.writeText(@js($embedCode->script($savedWidget))).then(() => { copied = true; message = 'JavaScript embed code copied to the clipboard.'; setTimeout(() => copied = false, 2000) }).catch(() => {})"
                                     class="mt-2 text-sm font-medium text-brand-600 hover:text-brand-700"
                                 >
                                     <span x-show="!copied">Copy JavaScript code</span>
                                     <span x-show="copied" x-cloak>Copied!</span>
                                 </button>
+
+                                <p
+                                    class="sr-only"
+                                    role="status"
+                                    aria-live="polite"
+                                    x-text="message"
+                                ></p>
                             </div>
 
                             <div class="mt-5">
@@ -241,13 +253,20 @@
 
                                 <button
                                     type="button"
-                                    x-data="{ copied: false }"
-                                    @click="navigator.clipboard.writeText(@js($embedCode->iframe($savedWidget))).then(() => { copied = true; setTimeout(() => copied = false, 2000) })"
+                                    x-data="{ copied: false, message: '' }"
+                                    @click="navigator.clipboard.writeText(@js($embedCode->iframe($savedWidget))).then(() => { copied = true; message = 'iframe embed code copied to the clipboard.'; setTimeout(() => copied = false, 2000) }).catch(() => {})"
                                     class="mt-2 text-sm font-medium text-brand-600 hover:text-brand-700"
                                 >
                                     <span x-show="!copied">Copy iframe code</span>
                                     <span x-show="copied" x-cloak>Copied!</span>
                                 </button>
+
+                                <p
+                                    class="sr-only"
+                                    role="status"
+                                    aria-live="polite"
+                                    x-text="message"
+                                ></p>
                             </div>
                         </x-ui.card>
                     @endif

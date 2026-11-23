@@ -85,10 +85,45 @@ it('keeps pro for a trialing subscription', function () {
     expect($user->fresh()->plan->isPro())->toBeTrue();
 });
 
-it('keeps pro for an incomplete subscription', function () {
+it('does not grant pro for an incomplete subscription', function () {
     $user = User::factory()->create(['stripe_id' => 'cus_test_123']);
 
+    // Stripe moves a subscription into the incomplete state when its
+    // initial payment attempt fails, so the customer has never paid and
+    // is not entitled to the Pro plan.
     app(PlanProvisioner::class)->handle(subscriptionPayload(['status' => 'incomplete']));
+
+    expect($user->fresh()->plan->isFree())->toBeTrue();
+});
+
+it('returns the account to free when a subscription becomes incomplete', function () {
+    $pro = Plan::query()->where('name', PlanName::Pro)->firstOrFail();
+
+    $user = User::factory()->create([
+        'stripe_id' => 'cus_test_123',
+        'plan_id' => $pro->id,
+    ]);
+
+    // A subscription that was running can fall back to incomplete when a
+    // payment attempt fails, and the account must not keep the Pro plan it
+    // was given for that subscription.
+    app(PlanProvisioner::class)->handle(subscriptionPayload(['status' => 'incomplete']));
+
+    expect($user->fresh()->plan->isFree())->toBeTrue();
+});
+
+it('grants pro once an incomplete subscription becomes active', function () {
+    $user = User::factory()->create(['stripe_id' => 'cus_test_123']);
+
+    $provisioner = app(PlanProvisioner::class);
+
+    // The first invoice has not been paid, so the account stays on Free.
+    $provisioner->handle(subscriptionPayload(['status' => 'incomplete']));
+
+    expect($user->fresh()->plan->isFree())->toBeTrue();
+
+    // The customer pays, and Stripe moves the subscription to active.
+    $provisioner->handle(subscriptionPayload(['status' => 'active']));
 
     expect($user->fresh()->plan->isPro())->toBeTrue();
 });

@@ -1,8 +1,14 @@
 <x-layouts.app title="Space created">
     <div class="mx-auto max-w-3xl space-y-8">
+        {{-- This page has no section heading of its own, so the card below
+             carries the level two heading. Without it the page would jump
+             from the layout heading straight to the card heading. --}}
+        <x-dashboard.section-heading
+            title="Your space is ready"
+            description="Share this link with customers and they can leave you a testimonial."
+        />
+
         <x-ui.card>
-            <x-slot:title>Your space is ready</x-slot:title>
-            <x-slot:description>Share this link with customers and they can leave you a testimonial.</x-slot:description>
 
             <div class="space-y-6">
                 <x-dashboard.copyable-url :url="url($space->publicPath())" />

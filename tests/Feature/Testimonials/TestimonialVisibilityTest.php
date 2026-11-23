@@ -1,8 +1,8 @@
 <?php
 
 use App\Enums\TestimonialVisibility;
-use App\Models\Testimonial;
 use App\Models\Space;
+use App\Models\Testimonial;
 
 test('a testimonial is publicly visible when it is approved, not hidden and consented', function () {
     expect(TestimonialVisibility::isPubliclyVisible(true, false, true))->toBeTrue();
