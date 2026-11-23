@@ -19,6 +19,12 @@
     </source>
     <php>
         <env name="APP_ENV" value="testing"/>
+        <!-- An encryption key is required because the web middleware group
+             encrypts cookies on every request, and the submission guard
+             encrypts its tokens. Without a key the application cannot boot
+             at all. This is a fixed value for the test environment only. It
+             is deliberately public and must never be used anywhere else. -->
+        <env name="APP_KEY" value="base64:AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA="/>
         <env name="APP_MAINTENANCE_DRIVER" value="file"/>
         <env name="BCRYPT_ROUNDS" value="4"/>
         <env name="BROADCAST_CONNECTION" value="null"/>
